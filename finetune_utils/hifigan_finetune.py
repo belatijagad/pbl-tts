@@ -9,7 +9,7 @@ from nemo.utils import logging
 from nemo.utils.exp_manager import exp_manager
 
 
-@hydra_runner(config_path="../conf/hifigan")
+@hydra_runner(config_path="../config/hifigan")
 def main(cfg):
     # Trainer setup
     trainer = pl.Trainer(**cfg.trainer)

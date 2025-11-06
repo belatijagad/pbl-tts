@@ -53,7 +53,7 @@ class FastPitchWithMCD(FastPitchModel):
 
 
 # hydra_runner call
-@hydra_runner(config_path="../conf")
+@hydra_runner(config_path="../config")
 def main(cfg):
     if hasattr(cfg.model.optim, "sched"):
         logging.warning(

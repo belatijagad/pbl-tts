@@ -53,7 +53,7 @@ class VitsWithMCD(VitsModel):
         super().on_validation_epoch_end()
 
 
-@hydra_runner(config_path="../conf")
+@hydra_runner(config_path="../config")
 def main(cfg):
     # Trainer setup
     trainer = pl.Trainer(use_distributed_sampler=False, **cfg.trainer)
