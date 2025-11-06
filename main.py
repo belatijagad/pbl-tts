@@ -70,6 +70,7 @@ def main(cfg: DictConfig):
     val_dataset = TTSDataset(manifest_filepath=val_manifest)
 
     # Load model
+    # TODO: check model saving and loading logic location
     e2e_model = None
     generator = None
     vocoder   = None
@@ -113,6 +114,7 @@ def main(cfg: DictConfig):
     )
 
     # Save inference results
+    # TODO: check whether inference result is already correctly saved
     output_dir = Path.cwd()
     results_dir = output_dir / "inference_results"
     results_dir.mkdir(parents=True, exist_ok=True)
@@ -120,7 +122,7 @@ def main(cfg: DictConfig):
     total_score = 0.0
     score_save_path = results_dir / "_scores.txt"
 
-    with open(score_save_path, 'w', encoding='utf-8') as f:
+    with open(score_save_path, "w", encoding="utf-8") as f:
         f.write("Sample_Index\tScore\n") 
         
         for i, (audio_data, mcd_tensor) in enumerate(zip(audio_preds, scores)):
