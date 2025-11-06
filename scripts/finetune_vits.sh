@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run python ../finetune_utils/vits_finetune.py --config-name=../config/vits.yaml \
+uv run python ../finetune_utils/vits_finetune.py --config-name=vits.yaml \
   train_dataset=../data/train_manifest.json \
   validation_datasets=../data/val_manifest.json \
   trainer.max_epochs=100 \

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run python ../finetune_utils/fastpitch_finetune.py --config-name=../config/fastpitch_align.yaml \
+uv run python ../finetune_utils/fastpitch_finetune.py --config-name=fastpitch_align.yaml \
   train_dataset=../data/train_manifest.json \
   validation_datasets=../data/val_manifest.json \
   ++trainer.max_epochs=100 \
