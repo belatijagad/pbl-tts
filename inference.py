@@ -8,7 +8,7 @@ from nemo.collections.tts.models.base import SpectrogramGenerator, Vocoder
 def inference(
     batches: TTSDataset, 
     sample_rate: int, 
-    loss_fn: callable,
+    score_fn: callable,
     e2e_model: VitsModel | None = None,
     generator: SpectrogramGenerator | None = None, 
     vocoder: Vocoder | None = None, 
@@ -18,7 +18,7 @@ def inference(
     assert (e2e_model is not None) + (generator is not None and vocoder is not None) == 1, \
         "You must provide either e2e_model or (generator AND vocoder)."
     
-    loss, audio_preds = [], []
+    scores, audio_preds = [], []
     with torch.inference_mode():
         for b in batches:
             parser = generator or e2e_model
@@ -38,7 +38,7 @@ def inference(
                 spectogram = e2e_model.audio_to_melspec_processor(audio_pred, audio_pred_len)
                 real_spectogram = e2e_model.audio_to_melspec_processor(audio_gt_tensor, audio_gt_len)
 
-            loss.append(loss_fn(real_spectogram, spectogram))
+            scores.append(score_fn(real_spectogram, spectogram))
             audio_preds.append(audio_pred.squeeze().cpu().numpy())
 
-    return audio_preds, loss
+    return audio_preds, scores
