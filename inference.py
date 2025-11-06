@@ -41,4 +41,4 @@ def inference(
             loss.append(loss_fn(real_spectogram, spectogram))
             audio_preds.append(audio_pred.squeeze().cpu().numpy())
 
-    return loss, audio_preds
+    return audio_preds, loss
