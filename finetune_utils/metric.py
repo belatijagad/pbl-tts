@@ -1,7 +1,8 @@
-import librosa
 import math
-import numpy as np
 
+import torch
+import librosa
+import numpy as np
 
 # Define the cost function for calculating DTW
 def log_spec_dB_dist(x, y):
@@ -16,9 +17,14 @@ def compute_mcd(ref_mel, pred_mel, n_mfcc=13, sr=22050):
     Function to calculate MCD with DTW for handling mismatch length. ref and pred should be mel spectrogram with
     shape (n_mels, frames)
     """
+    if isinstance(ref_mel, torch.Tensor):
+        ref_mel = ref_mel.squeeze().cpu().numpy()
+    if isinstance(pred_mel, torch.Tensor):
+        pred_mel = pred_mel.squeeze().cpu().numpy()
+
     ref_mfcc = librosa.feature.mfcc(S=ref_mel, sr=sr, n_mfcc=n_mfcc)
     pred_mfcc = librosa.feature.mfcc(S=pred_mel, sr=sr, n_mfcc=n_mfcc)
-
+    
     dtw_cost, dtw_min_path = librosa.sequence.dtw(
         ref_mfcc, pred_mfcc, metric=log_spec_dB_dist
     )
