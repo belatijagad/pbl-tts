@@ -14,21 +14,20 @@ from inference import inference
 from finetune_utils.metric import compute_mcd
 from dataset import fetch_dataset, create_manifest, split_data
 
-DATA_DIR = "./data"
+DATA_DIR = Path("./data")
 
-def load_data():
+def load_data(repo_id: str, filename: str, data_name: str) -> None:
     
     fetch_dataset(
-        repo_id="syarief-mulyadi/pbl-tts-dataset",
-        filename="sundanese/su_id_male_01596.zip",
-        repo_type="dataset",
-        download_dir=DATA_DIR,
+        repo_id=repo_id,
+        filename=filename,
+        download_dir=DATA_DIR + f"/{data_name}",
     )
     
-    full_transcript_path = Path(DATA_DIR) / "line_index.tsv"
-    full_manifest_path = Path(DATA_DIR) / "all_manifest.json"
-    train_manifest_path = Path(DATA_DIR) / "train_manifest.json"
-    val_manifest_path = Path(DATA_DIR) / "val_manifest.json"
+    full_transcript_path = DATA_DIR / "line_index.tsv"
+    full_manifest_path = DATA_DIR / "all_manifest.json"
+    train_manifest_path = DATA_DIR / "train_manifest.json"
+    val_manifest_path = DATA_DIR / "val_manifest.json"
 
     create_manifest(
         data_dir=DATA_DIR,
@@ -49,28 +48,26 @@ def main(cfg: DictConfig):
     OmegaConf.resolve(cfg)
 
     # Load and verify dataset
-    # TODO: add logic to load custom dataset
-    data_dir = Path(DATA_DIR)
-    wavs_dir = data_dir / "wavs"
-    train_manifest = data_dir / "train_manifest.json"
-    val_manifest = data_dir / "val_manifest.json"
+    data_working_dir = DATA_DIR / cfg.dataset.data_name
+    wavs_dir = data_working_dir / "wavs"
+    train_manifest = data_working_dir / "train_manifest.json"
+    val_manifest = data_working_dir / "val_manifest.json"
 
     data_is_valid = (
-        wavs_dir.is_dir() and           # `data/wavs/` directory exists
-        any(wavs_dir.iterdir()) and     # `data/wavs/` is not empty
-        train_manifest.is_file() and    # `data/train_manifest.json` exists
-        val_manifest.is_file()          # `data/val_manifest.json` exists
+        wavs_dir.is_dir() and           # `data/{data_name}/wavs/` directory exists
+        any(wavs_dir.iterdir()) and     # `data/{data_name}/wavs/` is not empty
+        train_manifest.is_file() and    # `data/{data_name}/train_manifest.json` exists
+        val_manifest.is_file()          # `data/{data_name}/val_manifest.json` exists
     )
 
     if not data_is_valid:
-        if data_dir.exists():
-            shutil.rmtree(data_dir)
-        load_data()
+        if data_working_dir.exists():
+            shutil.rmtree(data_working_dir)
+        load_data(cfg.dataset.repo_id, cfg.dataset.filename)
 
     val_dataset = TTSDataset(manifest_filepath=val_manifest)
 
     # Load model
-    # TODO: check model saving and loading logic location
     e2e_model = None
     generator = None
     vocoder   = None
@@ -114,9 +111,8 @@ def main(cfg: DictConfig):
     )
 
     # Save inference results
-    # TODO: check whether inference result is already correctly saved
     output_dir = Path.cwd()
-    results_dir = output_dir / "inference_results"
+    results_dir = output_dir / "results"
     results_dir.mkdir(parents=True, exist_ok=True)
     
     total_score = 0.0

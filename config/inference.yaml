@@ -4,6 +4,11 @@ n_window_size: 1024
 n_window_stride: 256
 n_fft: 1024
 
+dataset:
+  data_name: "tts_sunda"
+  repo_id: "syarief-mulyadi/pbl-tts-dataset"
+  filename: "sundanese/su_id_male_01596.zip"
+
 # "vits" or "fastpitch_hifigan"
 model_choice: "vits" 
 

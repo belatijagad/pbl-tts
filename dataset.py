@@ -7,18 +7,14 @@ from pathlib import Path
 import soundfile as sf
 from huggingface_hub import hf_hub_download
 
-def fetch_dataset(repo_id: str,
-                  filename: str="sundanese/su_id_male_01596.zip",
-                  repo_type: str="dataset",
-                  download_dir: str="./data") -> None:
-    
+def fetch_dataset(repo_id: str, filename: str, download_dir: str) -> None:
     data_dir = Path(download_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
 
     file_path_str = hf_hub_download(
         repo_id=repo_id,
         filename=filename,
-        repo_type=repo_type,
+        repo_type="dataset",
         local_dir=data_dir,
     )
     zip_path = Path(file_path_str)
