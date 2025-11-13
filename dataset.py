@@ -73,11 +73,12 @@ def create_manifest(data_dir: str, transcript_path: str, manifest_path: str):
     with open(manifest_path, "w", encoding="utf-8") as fout:
         for audio_file in audio_dir.glob("*.wav"): 
             info = sf.info(str(audio_file))
-            filename = audio_file.name
+            filename = audio_file.name.removesuffix('.wav')
             
             entry = {
                 "audio_filepath": str(audio_file.absolute()),
                 "duration": info.duration,
-                "text": transcripts[filename] 
+                "text": transcripts[filename],
+                "normalized_text": transcripts[filename] 
             }
             fout.write(json.dumps(entry) + "\n")

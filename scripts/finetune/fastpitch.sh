@@ -1,4 +1,5 @@
 #!/bin/bash
+HYDRA_FULL_ERROR=1
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 

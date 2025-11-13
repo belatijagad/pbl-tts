@@ -1,3 +1,4 @@
+from random import sample
 import shutil
 from pathlib import Path
 
@@ -7,7 +8,9 @@ import soundfile as sf
 from omegaconf import DictConfig, OmegaConf
 from nemo.collections.tts.models.vits import VitsModel
 from nemo.collections.tts.data.dataset import TTSDataset
+from nemo.collections.common.tokenizers.text_to_speech.tts_tokenizers import EnglishPhonemesTokenizer
 from nemo.collections.tts.models import FastPitchModel, HifiGanModel
+from nemo.collections.tts.g2p.models.en_us_arpabet import EnglishG2p
 
 
 from inference import inference
@@ -21,16 +24,16 @@ def load_data(repo_id: str, filename: str, data_name: str) -> None:
     fetch_dataset(
         repo_id=repo_id,
         filename=filename,
-        download_dir=DATA_DIR + f"/{data_name}",
+        download_dir=DATA_DIR / data_name,
     )
     
-    full_transcript_path = DATA_DIR / "line_index.tsv"
-    full_manifest_path = DATA_DIR / "all_manifest.json"
-    train_manifest_path = DATA_DIR / "train_manifest.json"
-    val_manifest_path = DATA_DIR / "val_manifest.json"
+    full_transcript_path = DATA_DIR / data_name / "line_index.tsv"
+    full_manifest_path = DATA_DIR / data_name / "all_manifest.json"
+    train_manifest_path = DATA_DIR / data_name / "train_manifest.json"
+    val_manifest_path = DATA_DIR / data_name / "val_manifest.json"
 
     create_manifest(
-        data_dir=DATA_DIR,
+        data_dir=DATA_DIR / data_name,
         transcript_path=str(full_transcript_path),
         manifest_path=str(full_manifest_path)
     )
@@ -38,7 +41,7 @@ def load_data(repo_id: str, filename: str, data_name: str) -> None:
     split_data(
         full_manifest_path=str(full_manifest_path),
         train_manifest_path=str(train_manifest_path),
-        val_manifest_path=str(val_manifest_path),
+        eval_manifest_path=str(val_manifest_path),
         eval_size=10,
         seed=42
     )
@@ -53,6 +56,7 @@ def main(cfg: DictConfig):
     train_manifest = data_working_dir / "train_manifest.json"
     val_manifest = data_working_dir / "val_manifest.json"
 
+    # TODO: Check valid cached data exists fail
     data_is_valid = (
         wavs_dir.is_dir() and           # `data/{data_name}/wavs/` directory exists
         any(wavs_dir.iterdir()) and     # `data/{data_name}/wavs/` is not empty
@@ -63,9 +67,19 @@ def main(cfg: DictConfig):
     if not data_is_valid:
         if data_working_dir.exists():
             shutil.rmtree(data_working_dir)
-        load_data(cfg.dataset.repo_id, cfg.dataset.filename)
+        load_data(cfg.dataset.repo_id, cfg.dataset.filename, cfg.dataset.data_name)
 
-    val_dataset = TTSDataset(manifest_filepath=val_manifest)
+    val_dataset = TTSDataset(manifest_filepath=[val_manifest], sample_rate=16_000, text_tokenizer=EnglishPhonemesTokenizer(g2p=EnglishG2p(phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10", heteronyms="finetune_utils/heteronyms-052722")))
+    # for b in val_dataset:
+    #     print("--------------------------------")
+    #     print(b)
+    #     print("--------------------------------")
+    #     print(b[0])
+    #     print(b[1])
+    #     print(b[2])
+    #     print(b[3])
+    #     print('--------------------------------')
+    # exit()
 
     # Load model
     e2e_model = None
@@ -100,7 +114,6 @@ def main(cfg: DictConfig):
     else:
         raise ValueError(f"Unknown model_choice in config: {cfg.model_choice}")
 
-    # Inference process
     audio_preds, scores = inference(
         batches=val_dataset,
         sample_rate=cfg.sample_rate,

@@ -5,7 +5,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
 DATASET_NAME=tts_indo
-DATASET_REPO_ID=TODO
+DATASET_REPO_ID=syarief-mulyadi/pbl-tts-dataset
 DATASET_FILENAME=TODO
 
 GENERATOR_CKPT=$PROJECT_ROOT/log/FastPitch/checkpoints/fastpitch_model.nemo
