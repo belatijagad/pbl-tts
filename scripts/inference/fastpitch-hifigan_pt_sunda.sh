@@ -10,6 +10,7 @@ echo "▶ Using Sundanese dataset..."
 echo "▶ Project Root: $PROJECT_ROOT"
 
 uv run python $PROJECT_ROOT/main.py \
-  model_choice=fastpitch_hifigan 
+  model_choice=fastpitch_hifigan \
+  +method=pt 
 
 echo "Inference complete."

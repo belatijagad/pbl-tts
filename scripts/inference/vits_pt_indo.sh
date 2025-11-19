@@ -17,6 +17,7 @@ uv run python $PROJECT_ROOT/main.py \
   dataset.data_name=$DATASET_NAME \
   dataset.repo_id=$DATASET_REPO_ID \
   dataset.filename=$DATASET_FILENAME \
-  model_choice=vits
+  model_choice=vits \
+  +method=pt 
 
 echo "Inference complete."

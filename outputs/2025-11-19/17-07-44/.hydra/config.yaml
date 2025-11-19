@@ -1,0 +1,24 @@
+sample_rate: 22050
+n_mel_channels: 80
+n_window_size: 1024
+n_window_stride: 256
+n_fft: 1024
+dataset:
+  data_name: tts_sunda
+  repo_id: syarief-mulyadi/pbl-tts-dataset
+  filename: sundanese/su_id_male_01596.zip
+model_choice: fastpitch_hifigan
+vits_config:
+  load_method: pretrained
+  pretrained_model: tts_en_lj_vits
+  checkpoint_path: null
+components_config:
+  generator:
+    load_method: checkpoint
+    pretrained_model: tts_en_fastpitch
+    checkpoint_path: /root/pbl-tts/log/FastPitch/2025-11-19_15-21-37/checkpoints/FastPitch--val_loss=0.6710-epoch=199.ckpt
+  vocoder:
+    load_method: checkpoint
+    pretrained_model: tts_en_hifigan
+    checkpoint_path: /root/pbl-tts/log/HifiGan/2025-11-19_15-44-55/checkpoints/HifiGan--val_loss=41.2395-epoch=149.ckpt
+method: ft

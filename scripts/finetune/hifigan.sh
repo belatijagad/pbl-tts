@@ -16,10 +16,10 @@ echo "▶ Project Root: $PROJECT_ROOT"
 echo "▶ Log Directory:  $LOG_DIR"
 
 uv run python $PROJECT_ROOT/finetune_utils/hifigan_finetune.py --config-name=hifigan.yaml \
-  ++trainer.max_epochs=100 \
-  trainer.check_val_every_n_epoch=20 \
-  model.train_ds.dataloader_params.batch_size=16 \
-  model.validation_ds.dataloader_params.batch_size=16 \
+  ++trainer.max_epochs=500 \
+  trainer.check_val_every_n_epoch=50 \
+  model.train_ds.dataloader_params.batch_size=32 \
+  model.validation_ds.dataloader_params.batch_size=32 \
   model.optim.lr=0.00001 \
   ~model.optim.sched \
   exp_manager.exp_dir=$LOG_DIR \

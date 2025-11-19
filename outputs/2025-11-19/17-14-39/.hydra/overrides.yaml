@@ -1,0 +1,4 @@
+- model_choice=vits
+- vits_config.load_method=checkpoint
+- vits_config.checkpoint_path="/root/pbl-tts/log/VITS/2025-11-19_16-11-12/checkpoints/VITS--loss_gen_all=30.3071-epoch=149-last.ckpt"
+- +method=ft

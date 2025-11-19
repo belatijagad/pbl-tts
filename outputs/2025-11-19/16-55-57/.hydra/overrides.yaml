@@ -1,0 +1,2 @@
+- model_choice=fastpitch_hifigan
+- +method=pt

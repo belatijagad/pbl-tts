@@ -21,6 +21,7 @@ uv run python $PROJECT_ROOT/main.py \
   dataset.filename=$DATASET_FILENAME \
   model_choice=vits \
   vits_config.load_method=checkpoint \
-  vits_config.checkpoint_path=$VITS_CKPT
+  vits_config.checkpoint_path=$VITS_CKPT \
+  +method=ft 
 
 echo "Inference complete."

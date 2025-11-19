@@ -24,6 +24,7 @@ uv run python $PROJECT_ROOT/main.py \
   components_config.generator.load_method=checkpoint \
   components_config.generator.checkpoint_path=$GENERATOR_CKPT \
   components_config.vocoder.load_method=checkpoint \
-  components_config.vocoder.checkpoint_path=$VOCODER_CKPT
+  components_config.vocoder.checkpoint_path=$VOCODER_CKPT \
+  +method=ft 
 
 echo "Inference complete."
