@@ -17,7 +17,7 @@ model_choice: "vits"
 
 vits_config:
   load_method: "pretrained"
-  pretrained_model: "tts_en_vits" 
+  pretrained_model: "tts_en_lj_vits" 
   checkpoint_path: null
 
 components_config:

@@ -69,17 +69,7 @@ def main(cfg: DictConfig):
             shutil.rmtree(data_working_dir)
         load_data(cfg.dataset.repo_id, cfg.dataset.filename, cfg.dataset.data_name)
 
-    val_dataset = TTSDataset(manifest_filepath=[val_manifest], sample_rate=16_000, text_tokenizer=EnglishPhonemesTokenizer(g2p=EnglishG2p(phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10", heteronyms="finetune_utils/heteronyms-052722")))
-    # for b in val_dataset:
-    #     print("--------------------------------")
-    #     print(b)
-    #     print("--------------------------------")
-    #     print(b[0])
-    #     print(b[1])
-    #     print(b[2])
-    #     print(b[3])
-    #     print('--------------------------------')
-    # exit()
+    val_dataset = TTSDataset(manifest_filepath=[val_manifest], sample_rate=22050, text_tokenizer=EnglishPhonemesTokenizer(g2p=EnglishG2p(phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10", heteronyms="finetune_utils/heteronyms-052722")))
 
     # Load model
     e2e_model = None
@@ -125,14 +115,14 @@ def main(cfg: DictConfig):
 
     # Save inference results
     output_dir = Path.cwd()
-    results_dir = output_dir / "results"
+    results_dir = output_dir / "results" / f'{cfg.model_choice}_{cfg.dataset.data_name}'
     results_dir.mkdir(parents=True, exist_ok=True)
     
     total_score = 0.0
     score_save_path = results_dir / "_scores.txt"
 
     with open(score_save_path, "w", encoding="utf-8") as f:
-        f.write("Sample_Index\tScore\n") 
+        f.write("Sample_Index\tScore\n")
         
         for i, (audio_data, mcd_tensor) in enumerate(zip(audio_preds, scores)):
             save_path = results_dir / f"pred_sample_{i}.wav"

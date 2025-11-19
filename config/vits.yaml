@@ -100,7 +100,7 @@ model:
 
     batch_sampler:
       batch_size: 32
-      boundaries: [32,300,400,500,600,700,800,900,1000]
+      boundaries: [0,600,900,1200,1500,1800]
       num_replicas: ${trainer.devices}
       shuffle: true
 

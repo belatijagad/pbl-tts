@@ -28,12 +28,10 @@ def inference(
             text = text.to(parser.device)
             text_len = text_len.to(parser.device)
 
-            print("--------------------------------")
-            print(audio_gt)
-            print(audio_gt_len)
-            print(text)
-            print(text_len)
-            print('--------------------------------')
+            if text_len == 0: # There exists case where tokenized_text  
+                # Caused by dataset.py:TTSDataset:__init__:253
+                # tokenized = self.text_tokenizer(sample["normalized_text"])
+                continue
             
             # text ~ (seq_len,)
             if e2e_model is None:
@@ -41,12 +39,12 @@ def inference(
                 gt_mels, gt_mel_len = generator.preprocessor(input_signal=audio_gt.unsqueeze(0), length=audio_gt_len.unsqueeze(0))
                 audio_pred = vocoder.convert_spectrogram_to_audio(spec=spectogram)
             else:
-                audio_pred = e2e_model.convert_text_to_waveform(text)
+                audio_pred = e2e_model.convert_text_to_waveform(tokens=text.unsqueeze(0))
                 audio_pred_len = torch.tensor(audio_pred.shape[1], dtype=torch.long, device=parser.device).unsqueeze(0)
-                spectogram = e2e_model.audio_to_melspec_processor(audio_pred, audio_pred_len)
-                gt_mels, gt_mel_len = e2e_model.audio_to_melspec_processor(audio_gt, audio_gt_len)
+                
+                spectogram, spectogram_len = e2e_model.audio_to_melspec_processor(audio_pred, audio_pred_len)
+                gt_mels, gt_mel_len = e2e_model.audio_to_melspec_processor(audio_gt.unsqueeze(0), audio_gt_len.unsqueeze(0))
 
-            print(gt_mels)
             scores.append(score_fn(gt_mels.squeeze().cpu().numpy(), spectogram.squeeze().cpu().numpy()))
             audio_preds.append(audio_pred.squeeze().cpu().numpy())
 
