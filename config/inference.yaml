@@ -8,6 +8,16 @@ dataset:
   data_name: "tts_sunda"
   repo_id: "syarief-mulyadi/pbl-tts-dataset"
   filename: "sundanese/su_id_male_01596.zip"
+  variant: "sundanese"  # "sundanese" (zip) or "indonesian" (tgz Librivox)
+  transcript_filename: "line_index.tsv"
+  metadata_filename: null
+  language: null
+  split_subdir: "test"
+  extracted_subdir: null
+  split:
+    train_size: null
+    eval_size: 10
+    seed: 42
 
 # "vits" or "fastpitch_hifigan"
 model_choice: "vits" 

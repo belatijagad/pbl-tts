@@ -1,4 +1,3 @@
-from random import sample
 import shutil
 from pathlib import Path
 
@@ -15,35 +14,135 @@ from nemo.collections.tts.g2p.models.en_us_arpabet import EnglishG2p
 
 from inference import inference
 from finetune_utils.metric import compute_mcd
-from dataset import fetch_dataset, create_manifest, split_data
+from dataset import (
+    fetch_dataset,
+    create_manifest,
+    split_data,
+    download_and_extract_tgz_dataset,
+    convert_language_subset_to_wav,
+    create_manifest_from_librivox,
+    split_manifest_entries,
+)
 
 DATA_DIR = Path("./data")
 
-def load_data(repo_id: str, filename: str, data_name: str) -> None:
-    
+
+def load_data(cfg: DictConfig) -> None:
+    dataset_cfg = cfg.dataset
+    variant = (dataset_cfg.get("variant") or "sundanese").lower()
+
+    if variant == "sundanese":
+        _prepare_sundanese_dataset(dataset_cfg)
+    elif variant == "indonesian":
+        _prepare_indonesian_dataset(cfg, dataset_cfg)
+    else:
+        raise ValueError(f"Unsupported dataset.variant '{variant}'.")
+
+
+def _prepare_sundanese_dataset(dataset_cfg: DictConfig) -> None:
+    data_dir = DATA_DIR / dataset_cfg.data_name
+    data_dir.mkdir(parents=True, exist_ok=True)
+
     fetch_dataset(
-        repo_id=repo_id,
-        filename=filename,
-        download_dir=DATA_DIR / data_name,
+        repo_id=dataset_cfg.repo_id,
+        filename=dataset_cfg.filename,
+        download_dir=data_dir,
     )
-    
-    full_transcript_path = DATA_DIR / data_name / "line_index.tsv"
-    full_manifest_path = DATA_DIR / data_name / "all_manifest.json"
-    train_manifest_path = DATA_DIR / data_name / "train_manifest.json"
-    val_manifest_path = DATA_DIR / data_name / "val_manifest.json"
+
+    transcript_filename = dataset_cfg.get("transcript_filename") or "line_index.tsv"
+    full_transcript_path = data_dir / transcript_filename
+    full_manifest_path = data_dir / "all_manifest.json"
+    train_manifest_path = data_dir / "train_manifest.json"
+    val_manifest_path = data_dir / "val_manifest.json"
 
     create_manifest(
-        data_dir=DATA_DIR / data_name,
+        data_dir=data_dir,
         transcript_path=str(full_transcript_path),
-        manifest_path=str(full_manifest_path)
+        manifest_path=str(full_manifest_path),
     )
-    
+
+    split_cfg = dataset_cfg.get("split") or {}
+    eval_size = split_cfg.get("eval_size", 10)
+    seed = split_cfg.get("seed", 42)
+
     split_data(
         full_manifest_path=str(full_manifest_path),
         train_manifest_path=str(train_manifest_path),
         eval_manifest_path=str(val_manifest_path),
-        eval_size=10,
-        seed=42
+        eval_size=eval_size,
+        seed=seed,
+    )
+
+
+def _prepare_indonesian_dataset(cfg: DictConfig, dataset_cfg: DictConfig) -> None:
+    data_dir = DATA_DIR / dataset_cfg.data_name
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    extract_root = download_and_extract_tgz_dataset(
+        repo_id=dataset_cfg.repo_id,
+        filename=dataset_cfg.filename,
+        download_dir=str(data_dir),
+    )
+
+    extracted_subdir = dataset_cfg.get("extracted_subdir") or "librivox-indonesia"
+    raw_dataset_dir = Path(extract_root) / extracted_subdir
+    if not raw_dataset_dir.exists():
+        raise FileNotFoundError(f"Expected extracted dataset at '{raw_dataset_dir}' not found.")
+
+    metadata_filename = dataset_cfg.get("metadata_filename") or "metadata_test.csv"
+    metadata_csv = raw_dataset_dir / metadata_filename
+    if not metadata_csv.exists():
+        raise FileNotFoundError(f"Metadata CSV '{metadata_csv}' not found.")
+
+    language = dataset_cfg.get("language") or "indonesian"
+    split_subdir = dataset_cfg.get("split_subdir") or "test"
+    wav_root = data_dir / "wavs"
+
+    convert_language_subset_to_wav(
+        dataset_root=str(raw_dataset_dir),
+        language=language,
+        split_subdir=split_subdir,
+        output_dir=str(wav_root),
+        sample_rate=cfg.sample_rate,
+    )
+
+    mel_dir = data_dir / "mels"
+    manifest_path = data_dir / "all_manifest.json"
+    manifest_entries = create_manifest_from_librivox(
+        metadata_csv_path=str(metadata_csv),
+        wav_root=str(wav_root),
+        manifest_path=str(manifest_path),
+        language=language,
+        mel_dir=str(mel_dir),
+        sample_rate=cfg.sample_rate,
+        n_fft=cfg.n_fft,
+        hop_length=cfg.n_window_stride,
+        win_length=cfg.n_window_size,
+        n_mels=cfg.n_mel_channels,
+    )
+
+    split_cfg = dataset_cfg.get("split") or {}
+    eval_size = split_cfg.get("eval_size", 10)
+    train_size = split_cfg.get("train_size")
+    seed = split_cfg.get("seed", 42)
+
+    if eval_size is None:
+        raise ValueError("dataset.split.eval_size must be provided for the Indonesian dataset.")
+    if train_size is None:
+        if len(manifest_entries) <= eval_size:
+            raise ValueError("Not enough samples to derive a train split.")
+        train_size = len(manifest_entries) - eval_size
+
+    train_manifest_path = data_dir / "train_manifest.json"
+    val_manifest_path = data_dir / "val_manifest.json"
+
+    split_manifest_entries(
+        entries=manifest_entries,
+        train_manifest_path=str(train_manifest_path),
+        eval_manifest_path=str(val_manifest_path),
+        train_size=train_size,
+        eval_size=eval_size,
+        seed=seed,
     )
 
 @hydra.main(version_base=None, config_path="config", config_name="inference")
@@ -68,9 +167,18 @@ def main(cfg: DictConfig):
     if not data_is_valid:
         if data_working_dir.exists():
             shutil.rmtree(data_working_dir)
-        load_data(cfg.dataset.repo_id, cfg.dataset.filename, cfg.dataset.data_name)
+        load_data(cfg)
 
-    val_dataset = TTSDataset(manifest_filepath=[val_manifest], sample_rate=22050, text_tokenizer=EnglishPhonemesTokenizer(g2p=EnglishG2p(phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10", heteronyms="finetune_utils/heteronyms-052722")))
+    val_dataset = TTSDataset(
+        manifest_filepath=[val_manifest],
+        sample_rate=cfg.sample_rate,
+        text_tokenizer=EnglishPhonemesTokenizer(
+            g2p=EnglishG2p(
+                phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10",
+                heteronyms="finetune_utils/heteronyms-052722",
+            )
+        ),
+    )
 
     # Load model
     e2e_model = None
