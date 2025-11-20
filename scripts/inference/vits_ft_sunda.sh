@@ -4,7 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
-VITS_CKPT=$PROJECT_ROOT/log/VITS/2025-11-19_16-11-12/checkpoints/VITS--loss_gen_all=30.3071-epoch=149-last.ckpt
+VITS_CKPT=$PROJECT_ROOT/log/VITS/2025-11-20_15-46-28-sunda/checkpoints/VITS--loss_gen_all=32.2853-epoch=99-last.ckpt
 
 echo "▶ Starting VITS inference..."
 echo "▶ Using fine-tuned version..."

@@ -19,7 +19,7 @@ echo "▶ Project Root: $PROJECT_ROOT"
 echo "▶ Log Directory:  $LOG_DIR"
 
 uv run python $PROJECT_ROOT/finetune_utils/fastpitch_finetune.py --config-name=fastpitch_align.yaml \
-  ++trainer.max_epochs=1000 \
+  ++trainer.max_epochs=500 \
   trainer.check_val_every_n_epoch=50 \
   model.train_ds.dataloader_params.batch_size=128 \
   model.validation_ds.dataloader_params.batch_size=128 \

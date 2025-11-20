@@ -8,7 +8,7 @@ dataset:
   data_name: "tts_sunda"
   repo_id: "syarief-mulyadi/pbl-tts-dataset"
   filename: "sundanese/su_id_male_01596.zip"
-  variant: "sundanese"  # "sundanese" (zip) or "indonesian" (tgz Librivox)
+  variant: "sundanese"  # "sundanese" or "indonesian"
   transcript_filename: "line_index.tsv"
   metadata_filename: null
   language: null
@@ -24,6 +24,19 @@ model_choice: "vits"
 
 # Load method is either "pretrained" or "checkpoint"
 # Checkpoint path example: "/path/to/model.nemo"
+
+# Text tokenizer / G2P settings. Defaults align with finetuning (IPA G2P).
+tokenizer:
+  type: "ipa"                       # "ipa" or "english"
+  phoneme_dict_path: "finetune_utils/ipa_cmudict-0.7b_nv23.01.txt"
+  heteronyms_path: "finetune_utils/heteronyms-052722"
+  phoneme_probability: 0.8
+  ignore_ambiguous_words: false
+  use_chars: true
+  use_stresses: true
+  punct: true
+  apostrophe: true
+  pad_with_space: false
 
 vits_config:
   load_method: "pretrained"

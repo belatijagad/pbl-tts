@@ -10,7 +10,7 @@ DATASET_FILENAME="data/audio_test.tgz"
 DATASET_LANGUAGE=indonesian
 DATASET_METADATA=metadata_test.csv
 
-VITS_CKPT=$PROJECT_ROOT/log/VITS/checkpoints/vits_model.nemo
+VITS_CKPT=$PROJECT_ROOT/log/VITS/2025-11-20_15-55-57-indo/checkpoints/VITS--loss_gen_all=38.9774-epoch=99-last.ckpt
 
 echo "▶ Starting VITS inference..."
 echo "▶ Using fine-tuned version..."
@@ -31,7 +31,7 @@ uv run python $PROJECT_ROOT/main.py \
   dataset.split.seed=42 \
   model_choice=vits \
   vits_config.load_method=checkpoint \
-  vits_config.checkpoint_path=$VITS_CKPT \
+  vits_config.checkpoint_path=\"$VITS_CKPT\" \
   +method=ft 
 
 echo "Inference complete."

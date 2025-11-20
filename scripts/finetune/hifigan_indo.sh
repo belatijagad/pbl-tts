@@ -6,9 +6,12 @@ export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
 LOG_DIR="$PROJECT_ROOT/log"
 PRETRAINED_DIR="$PROJECT_ROOT/nemo_pretrained"
+DATASET_NAME=tts_indo
+
 HIFIGAN_PATH="$PRETRAINED_DIR/tts_en_hifigan.nemo"
-TRAIN_DATASET_PATH="$PROJECT_ROOT/data/tts_indo/train_manifest.json"
-VAL_DATASET_PATH="$PROJECT_ROOT/data/tts_indo/val_manifest.json"
+TRAIN_DATASET_PATH="$PROJECT_ROOT/data/$DATASET_NAME/train_manifest.json"
+VAL_DATASET_PATH="$PROJECT_ROOT/data/$DATASET_NAME/val_manifest.json"
+BATCH_SIZE=32
 mkdir -p $LOG_DIR
 
 echo "▶ Starting HiFi-GAN Finetuning (Indonesian)..."
@@ -18,8 +21,8 @@ echo "▶ Log Directory:  $LOG_DIR"
 uv run python $PROJECT_ROOT/finetune_utils/hifigan_finetune.py --config-name=hifigan.yaml \
   ++trainer.max_epochs=500 \
   trainer.check_val_every_n_epoch=50 \
-  model.train_ds.dataloader_params.batch_size=32 \
-  model.validation_ds.dataloader_params.batch_size=32 \
+  model.train_ds.dataloader_params.batch_size=$BATCH_SIZE \
+  model.validation_ds.dataloader_params.batch_size=$BATCH_SIZE \
   model.optim.lr=0.00001 \
   ~model.optim.sched \
   exp_manager.exp_dir=$LOG_DIR \

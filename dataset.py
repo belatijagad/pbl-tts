@@ -41,12 +41,12 @@ def fetch_dataset(repo_id: str, filename: str, download_dir: str) -> None:
     zip_path.parent.rmdir()
 
 
-def download_and_extract_tgz_dataset(
+def download_and_extract_dataset(
     repo_id: str,
     filename: str,
     download_dir: str,
 ) -> Path:
-    """Download a .tgz dataset artifact from Hugging Face and extract it in-place."""
+    """Download the dataset artifact from Hugging Face and extract it in-place."""
 
     data_dir = Path(download_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -165,7 +165,7 @@ def create_manifest(data_dir: str, transcript_path: str, manifest_path: str, mel
             fout.write(json.dumps(entry) + "\n")
 
 
-def convert_language_subset_to_wav(
+def convert_language_to_wav(
     dataset_root: str,
     language: str = "indonesian",
     split_subdir: str = "test",

@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from typing import Any, Optional
 
 import torch
 import hydra
@@ -7,9 +8,13 @@ import soundfile as sf
 from omegaconf import DictConfig, OmegaConf
 from nemo.collections.tts.models.vits import VitsModel
 from nemo.collections.tts.data.dataset import TTSDataset
-from nemo.collections.common.tokenizers.text_to_speech.tts_tokenizers import EnglishPhonemesTokenizer
+from nemo.collections.common.tokenizers.text_to_speech.tts_tokenizers import (
+    EnglishPhonemesTokenizer,
+    IPATokenizer,
+)
 from nemo.collections.tts.models import FastPitchModel, HifiGanModel
 from nemo.collections.tts.g2p.models.en_us_arpabet import EnglishG2p
+from nemo.collections.tts.g2p.models.i18n_ipa import IpaG2p
 
 
 from inference import inference
@@ -18,13 +23,14 @@ from dataset import (
     fetch_dataset,
     create_manifest,
     split_data,
-    download_and_extract_tgz_dataset,
-    convert_language_subset_to_wav,
+    download_and_extract_dataset,
+    convert_language_to_wav,
     create_manifest_from_librivox,
     split_manifest_entries,
 )
 
-DATA_DIR = Path("./data")
+PROJECT_ROOT = Path(__file__).resolve().parent
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 def load_data(cfg: DictConfig) -> None:
@@ -78,7 +84,7 @@ def _prepare_indonesian_dataset(cfg: DictConfig, dataset_cfg: DictConfig) -> Non
     data_dir = DATA_DIR / dataset_cfg.data_name
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    extract_root = download_and_extract_tgz_dataset(
+    extract_root = download_and_extract_dataset(
         repo_id=dataset_cfg.repo_id,
         filename=dataset_cfg.filename,
         download_dir=str(data_dir),
@@ -98,7 +104,7 @@ def _prepare_indonesian_dataset(cfg: DictConfig, dataset_cfg: DictConfig) -> Non
     split_subdir = dataset_cfg.get("split_subdir") or "test"
     wav_root = data_dir / "wavs"
 
-    convert_language_subset_to_wav(
+    convert_language_to_wav(
         dataset_root=str(raw_dataset_dir),
         language=language,
         split_subdir=split_subdir,
@@ -169,15 +175,12 @@ def main(cfg: DictConfig):
             shutil.rmtree(data_working_dir)
         load_data(cfg)
 
+    text_tokenizer = _build_text_tokenizer(cfg.get("tokenizer"))
+
     val_dataset = TTSDataset(
         manifest_filepath=[val_manifest],
         sample_rate=cfg.sample_rate,
-        text_tokenizer=EnglishPhonemesTokenizer(
-            g2p=EnglishG2p(
-                phoneme_dict="finetune_utils/cmudict-0.7b_nv22.10",
-                heteronyms="finetune_utils/heteronyms-052722",
-            )
-        ),
+        text_tokenizer=text_tokenizer,
     )
 
     # Load model
@@ -262,6 +265,56 @@ def main(cfg: DictConfig):
 
         avg_mcd = total_score / len(scores)
         f.write(f"\nAverage_Score: {avg_mcd:.6f}\n")
-        
+
+
+def _resolve_path(path_str: Optional[str]) -> Optional[str]:
+    if path_str is None:
+        return None
+    candidate = Path(path_str)
+    if not candidate.is_absolute():
+        candidate = PROJECT_ROOT / candidate
+    return str(candidate)
+
+
+def _build_text_tokenizer(tokenizer_cfg: Optional[DictConfig]) -> Any:
+    cfg_dict = (
+        OmegaConf.to_container(tokenizer_cfg, resolve=True)
+        if tokenizer_cfg is not None
+        else {}
+    )
+    tokenizer_type = (cfg_dict.get("type") or "english").lower()
+
+    if tokenizer_type == "ipa":
+        g2p = IpaG2p(
+            phoneme_dict=_resolve_path(cfg_dict.get("phoneme_dict_path")),
+            heteronyms=_resolve_path(cfg_dict.get("heteronyms_path")),
+            phoneme_probability=cfg_dict.get("phoneme_probability", 1.0),
+            ignore_ambiguous_words=cfg_dict.get("ignore_ambiguous_words", False),
+            use_chars=cfg_dict.get("use_chars", True),
+            use_stresses=cfg_dict.get("use_stresses", True),
+        )
+        return IPATokenizer(
+            punct=cfg_dict.get("punct", True),
+            apostrophe=cfg_dict.get("apostrophe", True),
+            pad_with_space=cfg_dict.get("pad_with_space", False),
+            g2p=g2p,
+        )
+
+    if tokenizer_type == "english":
+        phoneme_dict = _resolve_path(
+            cfg_dict.get("phoneme_dict_path") or "finetune_utils/cmudict-0.7b_nv22.10"
+        )
+        heteronyms = _resolve_path(
+            cfg_dict.get("heteronyms_path") or "finetune_utils/heteronyms-052722"
+        )
+        g2p = EnglishG2p(
+            phoneme_dict=phoneme_dict,
+            heteronyms=heteronyms,
+        )
+        return EnglishPhonemesTokenizer(g2p=g2p)
+
+    raise ValueError(f"Unsupported tokenizer.type '{tokenizer_type}'.")
+
+
 if __name__ == "__main__":
     main()
